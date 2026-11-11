@@ -1,0 +1,7 @@
+This distribution is MoviePilot v2.15.1 (https://github.com/jxxghp/MoviePilot)
+with local changes; the modified files are
+app/modules/indexer/spider/mtorrent.py, app/modules/indexer/parser/mtorrent.py,
+app/helper/mteamvip_index.py, app/helper/mteamvip_auth.py
+and app/startup/lifecycle.py.
+
+Licensed under GPL-3.0, same as upstream. Corresponding source is this repository.

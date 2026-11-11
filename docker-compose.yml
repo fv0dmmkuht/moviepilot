@@ -1,0 +1,15 @@
+services:
+  moviepilot:
+    image: 22321121/moviepilot:latest
+    container_name: moviepilot
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config:/config
+      - ./media:/media
+    environment:
+      - TZ=Asia/Shanghai
+      - PUID=0
+      - PGID=0
+      - UMASK=000
