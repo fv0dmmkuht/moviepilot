@@ -101,10 +101,6 @@ BUILTIN_RULE_SET: Dict[str, dict] = {
         "include": [r"WEB-?DL|WEB-?RIP"],
         "exclude": [],
     },
-    # 免费
-    "FREE": {
-        "downloadvolumefactor": 0,
-    },
     # 国语配音
     "CNVOI": {
         "include": [r"[国國][语語]配音|[国國]配|[国國][语語]"],
