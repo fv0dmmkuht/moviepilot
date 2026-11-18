@@ -32,8 +32,14 @@ class MTorrentSpider:
     def __init__(self, indexer: dict):
         indexer = indexer or {}
         self._name = indexer.get("name") or ""
-        candidate = str(indexer.get("domain") or indexer.get("url") or "")
-        self._base = (candidate if "m-team.vip" in candidate else self._default_site).rstrip("/")
+        candidate = str(indexer.get("domain") or indexer.get("url") or "").strip().rstrip("/")
+        if "m-team.vip" not in candidate:
+            candidate = self._default_site.rstrip("/")
+        elif "://" not in candidate:
+            candidate = "https://" + candidate
+        if candidate.startswith("http://"):
+            candidate = "https://" + candidate[len("http://"):]
+        self._base = candidate
         self._cookie = indexer.get("cookie")
         self._ua = indexer.get("ua")
         self._proxy = settings.PROXY if indexer.get("proxy") else None

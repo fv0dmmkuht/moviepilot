@@ -6,9 +6,11 @@ SITE_HOST = "m-team.vip"
 PROBE_PATH = "/api/local/user/me"
 
 _DROP_KEYS = ("language", "subtitles", "api_domain", "api_host")
+_ENTRY = {}
 
 
 def register() -> None:
+    _install_lookup()
     _install_site_test()
     try:
         helper = SitesHelper()
@@ -19,25 +21,65 @@ def register() -> None:
                 if isinstance(v, dict) and v.get("name") == SITE_LABEL]
         if keys:
             for key in keys:
-                entry = dict(sites[key])
-                entry["domain"] = SITE_URL
-                entry["url"] = SITE_URL
-                for drop in _DROP_KEYS:
-                    entry.pop(drop, None)
-                helper.add_indexer(key, entry)
+                helper.add_indexer(key, _fill(dict(sites[key])))
             return
-        helper.add_indexer("m-team.vip", {
+        helper.add_indexer(SITE_HOST, _fill({
             "id": 92001,
             "name": SITE_LABEL,
-            "domain": SITE_URL,
-            "url": SITE_URL,
             "parser": "mTorrent",
             "schema": "MTorrent",
             "public": False,
             "pri": 1,
-        })
+        }))
     except Exception:
         return
+
+
+def _fill(entry: dict) -> dict:
+    entry["domain"] = SITE_HOST
+    entry["url"] = SITE_URL
+    for drop in _DROP_KEYS:
+        entry.pop(drop, None)
+    _ENTRY.clear()
+    _ENTRY.update(entry)
+    return entry
+
+
+def _host_of(domain) -> str:
+    text = str(domain or "").strip()
+    if "://" in text:
+        text = text.split("://", 1)[1]
+    return text.split("/", 1)[0].split(":", 1)[0].strip().lower()
+
+
+def _install_lookup() -> None:
+    if getattr(SitesHelper, "_mteamvip_lookup_patched", False):
+        return
+    original_get = SitesHelper.get_indexer
+    original_async = SitesHelper.async_get_indexer
+
+    def fallback(domain):
+        if _ENTRY and _host_of(domain) == SITE_HOST:
+            return dict(_ENTRY)
+        return None
+
+    def get_indexer(self, domain):
+        try:
+            found = original_get(self, domain)
+        except Exception:
+            found = None
+        return found or fallback(domain)
+
+    async def async_get_indexer(self, domain):
+        try:
+            found = await original_async(self, domain)
+        except Exception:
+            found = None
+        return found or fallback(domain)
+
+    SitesHelper.get_indexer = get_indexer
+    SitesHelper.async_get_indexer = async_get_indexer
+    SitesHelper._mteamvip_lookup_patched = True
 
 
 def legacy_keys() -> tuple:

@@ -14,10 +14,14 @@ class MTorrentSiteUserInfo(SiteParserBase):
     _default_site = "https://m-team.vip/"
 
     def _site_base(self) -> str:
-        candidate = str(self._site_url or "")
-        if "m-team.vip" in candidate:
-            return candidate.rstrip("/")
-        return self._default_site.rstrip("/")
+        candidate = str(self._site_url or "").strip().rstrip("/")
+        if "m-team.vip" not in candidate:
+            return self._default_site.rstrip("/")
+        if "://" not in candidate:
+            candidate = "https://" + candidate
+        if candidate.startswith("http://"):
+            candidate = "https://" + candidate[len("http://"):]
+        return candidate
 
     def parse(self):
         if not self._site_cookie:
