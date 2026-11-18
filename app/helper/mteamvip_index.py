@@ -15,7 +15,7 @@ _ENTRY = {}
 
 
 def register() -> None:
-    for step in (_install, _install_site_test, _announce):
+    for step in (_install, _install_site_test, _install_favicon, _announce):
         try:
             step()
         except Exception:
@@ -211,10 +211,14 @@ def _token_of(site) -> str:
 
 
 def _site_base(site) -> str:
-    candidate = str(getattr(site, "domain", "") or getattr(site, "url", "") or "")
-    if SITE_HOST in candidate:
-        return candidate.split(SITE_HOST, 1)[0] + SITE_HOST
-    return SITE_URL.rstrip("/")
+    candidate = str(getattr(site, "url", "") or getattr(site, "domain", "") or "").strip()
+    if SITE_HOST not in candidate:
+        return SITE_URL.rstrip("/")
+    if "://" not in candidate:
+        candidate = "https://" + candidate
+    if candidate.startswith("http://"):
+        candidate = "https://" + candidate[len("http://"):]
+    return candidate.split(SITE_HOST, 1)[0] + SITE_HOST
 
 
 def _probe_legacy(site):
@@ -243,10 +247,8 @@ def _probe_legacy(site):
 
 
 def _install_site_test() -> None:
-    try:
-        from app.chain.site import SiteChain
-    except Exception:
-        return
+    from app.chain.site import SiteChain
+
     if getattr(SiteChain, "_mteamvip_site_test_patched", False):
         return
     original = SiteChain.__init__
@@ -260,3 +262,21 @@ def _install_site_test() -> None:
 
     SiteChain.__init__ = __init__
     SiteChain._mteamvip_site_test_patched = True
+
+
+def _install_favicon() -> None:
+    from app.chain.site import SiteChain
+
+    if getattr(SiteChain, "_mteamvip_favicon_patched", False):
+        return
+    name = "_SiteChain__parse_favicon"
+    original = getattr(SiteChain, name)
+
+    def parse_favicon(url, cookie, ua):
+        text = str(url or "")
+        if SITE_HOST in text and "://" not in text:
+            text = "https://" + text
+        return original(text, cookie, ua)
+
+    setattr(SiteChain, name, staticmethod(parse_favicon))
+    SiteChain._mteamvip_favicon_patched = True
